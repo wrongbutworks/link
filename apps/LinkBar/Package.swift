@@ -5,6 +5,10 @@ let package = Package(
     name: "LinkBar",
     platforms: [.macOS(.v14)],
     targets: [
-        .executableTarget(name: "LinkBar", path: "Sources/LinkBar")
+        .executableTarget(
+            name: "LinkBar",
+            path: "Sources/LinkBar",
+            resources: [.process("Resources")]
+        )
     ]
 )

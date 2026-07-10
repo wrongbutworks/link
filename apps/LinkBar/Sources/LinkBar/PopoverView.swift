@@ -13,18 +13,35 @@ struct PopoverView: View {
                 Divider()
             }
             inboxSection
+            if let captures = store.captures, !captures.captures.isEmpty {
+                Divider()
+                capturesSection(captures)
+            }
+            if !store.activity.isEmpty {
+                Divider()
+                activitySection
+            }
             footer
         }
         .padding(12)
-        .frame(width: 360)
+        .frame(width: 380)
     }
 
     private var header: some View {
         HStack {
-            Image(systemName: "brain")
             Text("Link").font(.headline)
             Spacer()
             if store.busy { ProgressView().controlSize(.small) }
+            Button {
+                store.rememberClipboard()
+            } label: { Image(systemName: "doc.on.clipboard") }
+                .buttonStyle(.borderless)
+                .help("Remember clipboard — saved as pending review")
+            Button {
+                store.openWorkspace()
+            } label: { Image(systemName: "folder") }
+                .buttonStyle(.borderless)
+                .help("Open the workspace in Finder")
             Button {
                 store.refresh()
             } label: { Image(systemName: "arrow.clockwise") }
@@ -112,8 +129,61 @@ struct PopoverView: View {
         }
     }
 
+    private func capturesSection(_ captures: CaptureInbox) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Session captures").font(.subheadline).bold()
+                Spacer()
+                Text("\(captures.count)").font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(captures.captures.prefix(3)) { capture in
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(capture.displayTitle).font(.callout).lineLimit(1)
+                        if let project = capture.project, !project.isEmpty {
+                            Text(project).font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Button("Accept") { store.acceptCapture(capture) }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .help("Accept the first proposal into reviewed memory")
+                    Button {
+                        store.deleteCapture(capture)
+                    } label: { Image(systemName: "trash") }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .help("Discard this capture")
+                }
+            }
+        }
+    }
+
+    private var activitySection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Recent activity").font(.subheadline).bold()
+            ForEach(store.activity.prefix(3)) { entry in
+                HStack(spacing: 6) {
+                    Text(entry.operation)
+                        .font(.caption2)
+                        .padding(.horizontal, 5)
+                        .background(Color.secondary.opacity(0.15))
+                        .clipShape(Capsule())
+                    Text(entry.description ?? "")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
     private var footer: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if let flash = store.flash {
+                Text(flash).font(.caption2).foregroundStyle(.green).lineLimit(1)
+            }
             if let error = store.lastError {
                 Text(error).font(.caption2).foregroundStyle(.red).lineLimit(2)
             }

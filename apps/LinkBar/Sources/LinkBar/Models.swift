@@ -29,6 +29,34 @@ struct InboxItem: Decodable, Identifiable {
     }
 }
 
+struct CaptureInbox: Decodable {
+    let count: Int
+    let captures: [CaptureItem]
+}
+
+struct CaptureItem: Decodable, Identifiable {
+    let path: String
+    let title: String?
+    let project: String?
+
+    var id: String { path }
+    var displayTitle: String {
+        title ?? (path as NSString).lastPathComponent
+    }
+}
+
+struct MemoryLog: Decodable {
+    let entries: [LogEntry]
+}
+
+struct LogEntry: Decodable, Identifiable {
+    let timestamp: String
+    let operation: String
+    let description: String?
+
+    var id: String { timestamp + operation }
+}
+
 struct RecallPayload: Decodable {
     let memories: [RecalledMemory]
     let abstention: Abstention?
