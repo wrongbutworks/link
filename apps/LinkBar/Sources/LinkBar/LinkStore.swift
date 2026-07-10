@@ -123,6 +123,46 @@ final class LinkStore: ObservableObject {
         NSWorkspace.shared.open(URL(fileURLWithPath: LinkCLI.workspace))
     }
 
+    /// Open the full Memory Dashboard in the browser, starting the local
+    /// viewer first if it is not already running (127.0.0.1 only — the
+    /// viewer refuses to bind anywhere else by design).
+    func openDashboard() {
+        busy = true
+        Task.detached(priority: .userInitiated) {
+            let dashboard = URL(string: "http://127.0.0.1:3000/memory")!
+            if await Self.viewerResponds() {
+                await MainActor.run {
+                    NSWorkspace.shared.open(dashboard)
+                    self.busy = false
+                }
+                return
+            }
+            LinkCLI.launchDetached(["serve", LinkCLI.workspace, "--port", "3000"])
+            for _ in 0..<20 where !(await Self.viewerResponds()) {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
+            await MainActor.run {
+                if #available(macOS 14.0, *) {
+                    NSWorkspace.shared.open(dashboard)
+                }
+                self.flash = "Viewer started at 127.0.0.1:3000"
+                self.busy = false
+            }
+        }
+    }
+
+    private static func viewerResponds() async -> Bool {
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:3000/")!)
+        request.timeoutInterval = 0.5
+        request.httpMethod = "HEAD"
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            return (response as? HTTPURLResponse) != nil
+        } catch {
+            return false
+        }
+    }
+
     private func act(_ args: [String]) {
         busy = true
         Task.detached(priority: .userInitiated) {

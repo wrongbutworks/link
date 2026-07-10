@@ -38,6 +38,11 @@ struct PopoverView: View {
                 .buttonStyle(.borderless)
                 .help("Remember clipboard — saved as pending review")
             Button {
+                store.openDashboard()
+            } label: { Image(systemName: "gauge.with.needle") }
+                .buttonStyle(.borderless)
+                .help("Open the Memory Dashboard (starts the local viewer if needed)")
+            Button {
                 store.openWorkspace()
             } label: { Image(systemName: "folder") }
                 .buttonStyle(.borderless)

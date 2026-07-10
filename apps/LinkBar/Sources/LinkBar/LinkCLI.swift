@@ -63,6 +63,17 @@ enum LinkCLI {
         return data
     }
 
+    /// Fire-and-forget for long-lived processes (the local viewer).
+    static func launchDetached(_ args: [String]) {
+        guard let lnk = lnkPath() else { return }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: lnk)
+        process.arguments = args
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try? process.run()
+    }
+
     static func runJSON<T: Decodable>(_ type: T.Type, _ args: [String]) throws -> T {
         let data = try run(args)
         return try JSONDecoder().decode(type, from: data)
